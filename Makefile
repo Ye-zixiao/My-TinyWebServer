@@ -13,4 +13,4 @@ $(MAIN):$(OBJS)
 	$(CC) -o $(MAIN) $(SRCS) $(DLFLAGS) $(CFLAGS)
 
 clean:
-	-rm main
+	-rm $(MAIN)
