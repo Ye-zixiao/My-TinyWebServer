@@ -311,6 +311,8 @@ http_task::HTTP_CODE http_task::do_request() {
 		strcpy(_M_real_file + len, "/video.html");
 	else if (flag == '6')
 		strcpy(_M_real_file + len, "/baidu.html");
+	else if (flag == '7')
+		strcpy(_M_real_file + len, "/frame.html");
 	else
 		strncpy(_M_real_file + len, _M_url, FILENAME_LEN - 1 - len);
 

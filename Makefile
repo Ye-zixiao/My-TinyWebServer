@@ -4,7 +4,7 @@ DLFLAGS := -lpthread -lmysqlclient
 
 SRCS := ./webserver/webserver.cpp ./http/http_task.cpp ./log/log.cpp ./mysql/sql_connpool.cpp \
 		./myutils/myutils.cpp ./timer/timer_heap.cpp main.cpp
-MAIN := main
+MAIN := server
 
 .PHONY:
 all: $(MAIN)
