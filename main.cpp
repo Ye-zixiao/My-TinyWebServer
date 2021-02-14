@@ -37,7 +37,7 @@ int main(int argc, char* argv[])
 	}
 
 	WebServer server;
-	server.init(port, "root", "yxhhll19961105", "yourdb", 1, 1, sql_num, nthread, close_log);
+	server.init(port, "root", "xxxx", "yourdb", 1, 1, sql_num, nthread, close_log);
 	//初始化日志组件
 	server.log_write();
 	//创建数据库连接池
