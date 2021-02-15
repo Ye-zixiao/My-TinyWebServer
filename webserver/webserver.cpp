@@ -223,6 +223,13 @@ void WebServer::event_loop() {
 			int sockfd = _M_events[i].data.fd;
 
 			if (sockfd == _M_listenfd) {
+				/**
+				 * 这里可以设计成两个部分：
+				 * 1、新连接的接受；
+				 * 2、HTTP_handler的创建并注册读完成事件感兴趣事件
+				 * 更进一步，我们可以将这部分原来的C++代码封装成Acceptor接受器
+				 * 而不再是零散的代码形式
+				 */
 				handle_newconn();
 			}
 			else if (_M_events[i].events & (EPOLLRDHUP | EPOLLHUP | EPOLLERR)) {
@@ -234,6 +241,17 @@ void WebServer::event_loop() {
 					LOG_ERROR("%s", "dealclientdata error");
 			}
 			else if (_M_events[i].events & EPOLLIN) {
+				/**
+				 * 模拟Proactor在读准备事件通知时主动调用读数据read2buf()（这里对应http_task的
+				 * read_once()）操作，这样对HTTP_Handler隐藏操作系统不支持异步读aio的缺陷。因此
+				 *   我认为一种比较好的想法是设计这样的类继承体系：HTTP_handler继承一个AIO_Handler
+				 * 的基类，基类自身就定义非虚的成员函数read2buf()，对于写数据操作也相同，可以设计
+				 * 一个write4buf()的非虚成员函数，这样用户在编写AIO_Handler的派生类HTTP_Handler
+				 * 时就不再需要自己处理数据读写的操作。
+				 *   在读取完数据之后，Proactor只需要将Handler*指针通过请求队列传递给线程池中的
+				 * 某一个工作线程即可，让它来处理HTTP的解析和资源获取等逻辑操作即可，而Proactor既
+				 * 可以继续执行事件循环处理其他客户的请求了。
+				 */
 				handle_read(sockfd);
 			}
 			else if (_M_events[i].events & EPOLLOUT) {
