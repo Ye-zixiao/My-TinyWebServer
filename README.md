@@ -94,6 +94,6 @@ usage: server [-p port] [-n threads] [-s sql_num] [-l close_log]
 2. [Reactor：一种面向同步事件的多路分解和处理器调度的对象行为模式](reference\reactor-siemens.pdf) 
 3. [Proactor：一种面向异步事件的多路分解和处理器调度的对象行为模式](reference/proactor.pdf)
 4. [半同步/半异步：一种高效且结构良好的I/O并发架构模式](reference\PLoP-95.pdf) ：
-5. [对比两种高性能I/O设计模式](https://www.artima.com/articles/io_design_patterns.html)：这篇文章很好的介绍了一种使用同步I/O模拟Proactor模式的方法。
+5. [对比两种高性能I/O设计模式](https://www.artima.com/articles/io_design_patterns.html)：这篇文章介绍了一种使用同步I/O模拟Proactor模式的方法。
 6. [C10K问题](http://www.kegel.com/c10k.html#threads.nptl)
 

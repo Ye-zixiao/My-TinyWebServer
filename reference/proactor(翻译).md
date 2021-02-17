@@ -388,3 +388,121 @@ Reactor和Proactor两者之间的区别在于，前者的事件循环获取的�
 而后者若是真采用异步I/O模式，则事件循环获取到的是完成事件的通知；但若是通过同步I/O模式进行模拟，那么事件循环获取的是准备事件的通知，但Proactor此时会自动对其执行数据的读写操作。然后再将逻辑处理的任务交给Handler的回调函数去处理（一般在多线程中让工作线程处理），这样的好处在于工作线程进行需要做逻辑处理的操作，而不需要像Reactor那样既处理数据的读写也需要做逻辑处理操作。
 
 因此从广义上来讲最主要的区别在于工作线程的责任是否仅仅处理逻辑操作这一点，更狭义的话就是时事件通知的不同。
+
+
+
+### 9.3 以模拟Proactor的方式构建一个简单HTTP Server
+
+模拟Proactor方法的本质从编程的角度上来讲其实仅仅就是Reactor模式的微小变动：让HTTP_Handler在工作线程中不再负责读数据和写数据的任务，而是仅仅负责HTTP报文的解析和逻辑处理。
+
+1、首先需要完成一些基础组件，比如线程池threadpool：
+
+```c++
+template<typename Event_Handler>
+class threadpool{
+public:
+    void append(Event_Handler*);
+    
+private:
+    static void * thread_func(void*args);
+    /* 每一个工作线程中调用run()方法，试图从请求队列中
+    获取一个事件处理器指针Event_Handler*，然后进行处理 */
+    void run();
+    
+private:
+	std::queue<Handler*> _M_queue;    
+};
+```
+
+2、接着，我们应该设计完成调度器Completion Dispatcher：
+
+```c++
+class Completion_Dispatcher{
+public:
+    //使用单例模式保证只有一个完成调度器
+    Completioin_Dispatcher* getinstance();
+	void register_handler(Event_Handler*);
+    void remove_handler(Event_Handler*);
+    void events_loop();
+    /* ... */
+private:
+    /* 假设不考虑定时器和MySQL连接池 */
+	threadpool<Event_Handler*> _M_threadpool;
+   	std::unordered_map<Handle,Event_Handler*> _M_handlers;
+};
+
+void Completion_Dispatcher::events_loop(){
+    for(;;){
+        int nret=epoll_wait(...);
+        for(int i=0;i<nret;++i){
+            int sockfd=events[i].data.fd;
+            
+           	if(监听套接字有新的连接事件){
+                Acceptor->event_handle();
+            }
+            else if(连接套接字的对端关闭){
+               	关闭套接字;
+                remove_handler(http_handler);
+            }
+            else if(连接套接字读准备事件){
+                http_handler->read();
+                _M_threadpool.append(http_handler);
+            }
+            else if(连接套接字写准备事件){
+                http_handler->write();
+                根据情况是继续保持连接还是直接关闭连接;
+            }
+            else ;
+        }
+    }
+}
+```
+
+3、最后，设计事件处理器继承结构体系：
+
+```c++
+class Event_Handler{
+public:
+    typedef int Handle;   
+    virtual void event_handle()=0;
+    virtual Handle get_handle()=0;
+};
+
+class Acceptor:public Event_Handler{
+public:
+  	Acceptor(){
+        //先创建listenfd，完成bind、listen的过程
+        Completion_Dispatcher::getinstance()->register_handler(this);
+    }
+	void event_handle(){
+        int sockfd=accpet(listenfd);
+        HTTP_Handler* handler=new HTTP_Handler(sockfd);
+    }    
+    Handle get_handle(){return listenfd;}
+
+private:
+	Handle listenfd;    
+};
+
+class AIO_Handler:public Event_Handler{
+public:
+    AIO_Handler(){
+        Completion_Dispatcher::getinstance()->register_handler(this);
+    }
+    virtual void event_handle()=0;
+    Handle get_handle() override{return sockfd;}
+    
+private:
+	int sockfd;  
+    char readbuf[];
+    char writebuf[];
+};
+
+class HTTP_Handler:public AIO_Handler{
+public:
+	void event_handle(){
+        //解析HTTP报文
+        //完成逻辑处理任务
+    }
+}
+```
