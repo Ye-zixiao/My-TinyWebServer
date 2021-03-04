@@ -55,6 +55,8 @@ My-TinyWebServer服务器的网络结构图如下所示：
 
 <img src="./root/frame.png" alt="My-TinyWebServer" style="zoom: 80%;" />
 
+在这个项目中，我们可以认为WebServer类就是Proactor中的完成调度器Completion Dispatcher，http_task HTTP任务对象就是一种Proactor中的Event_Handler的派生类，接受器Acceptor也应该是Event_Handler的派生类，但在这个项目代码中暂时并没有将其独立封装成一个类。其中数据的读写操作在模拟Proactor模式中是通过让主线程主动调用http_task任务对象提供的`read_once()`和`write()`方法（通过同步I/O）完成，这样工作线程就仅仅需要负担HTTP报文解析和逻辑处理的负担。
+
 
 
 ## 3、使用说明
